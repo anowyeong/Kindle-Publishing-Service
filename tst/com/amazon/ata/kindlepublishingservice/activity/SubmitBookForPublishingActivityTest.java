@@ -87,4 +87,5 @@ public class SubmitBookForPublishingActivityTest {
         assertEquals("publishing.123", response.getPublishingRecordId(), "Expected response to return a publishing" +
                 "record id.");
     }
+
 }
