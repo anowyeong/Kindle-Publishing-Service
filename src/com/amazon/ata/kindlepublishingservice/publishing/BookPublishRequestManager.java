@@ -1,16 +1,18 @@
 package com.amazon.ata.kindlepublishingservice.publishing;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-
+@Singleton
 public class BookPublishRequestManager {
-    private Queue<BookPublishRequest> bookPublishRequestsQueue;
+    private final Queue<BookPublishRequest> bookPublishRequestsQueue;
 
     @Inject
     public BookPublishRequestManager() {
-        bookPublishRequestsQueue = new LinkedList<>();
+        this.bookPublishRequestsQueue = new ConcurrentLinkedQueue<>();
     }
 
     public void addBookPublishRequest(BookPublishRequest request) {
@@ -25,4 +27,7 @@ public class BookPublishRequestManager {
 
     }
 
+    public Queue<BookPublishRequest> getBookPublishRequestsQueue() {
+        return bookPublishRequestsQueue;
+    }
 }

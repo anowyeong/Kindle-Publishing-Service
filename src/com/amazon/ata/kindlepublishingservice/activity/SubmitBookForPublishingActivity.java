@@ -30,9 +30,9 @@ import javax.inject.Inject;
  */
 public class SubmitBookForPublishingActivity {
 
-    private PublishingStatusDao publishingStatusDao;
-    private BookPublishRequestManager bookPublishRequestManager;
-    private CatalogDao catalogDao;
+    private final PublishingStatusDao publishingStatusDao;
+    private final BookPublishRequestManager bookPublishRequestManager;
+    private final CatalogDao catalogDao;
 
     /**
      * Instantiates a new SubmitBookForPublishingActivity object.
@@ -40,10 +40,10 @@ public class SubmitBookForPublishingActivity {
      * @param publishingStatusDao PublishingStatusDao to access the publishing status table.
      */
     @Inject
-    public SubmitBookForPublishingActivity(PublishingStatusDao publishingStatusDao, CatalogDao catalogDao) {
+    public SubmitBookForPublishingActivity(PublishingStatusDao publishingStatusDao, CatalogDao catalogDao, BookPublishRequestManager bookPublishRequestManager) {
         this.publishingStatusDao = publishingStatusDao;
         this.catalogDao = catalogDao;
-        bookPublishRequestManager = new BookPublishRequestManager();
+        this.bookPublishRequestManager = bookPublishRequestManager;
     }
 
     /**
@@ -57,16 +57,16 @@ public class SubmitBookForPublishingActivity {
      */
     public SubmitBookForPublishingResponse execute(SubmitBookForPublishingRequest request) {
         final BookPublishRequest bookPublishRequest = BookPublishRequestConverter.toBookPublishRequest(request);
-
+        System.out.println(publishingStatusDao);
         // TODO: If there is a book ID in the request, validate it exists in our catalog
-        Book book = null;
+        Book book;
+
         if (bookPublishRequest.getBookId() != null) {
             // Check if book exists in catalog
-             book = CatalogItemConverter.toBook(catalogDao.getBook(request.getBookId()));
-
+            book = CatalogItemConverter.toBook(catalogDao.getBook(request.getBookId()));
         } else {
             book = Book.builder()
-//                    .withVersion()
+                   .withVersion(1)
                     .withBookId(request.getBookId())
                     .withTitle(request.getTitle())
                     .withGenre(request.getGenre())
@@ -76,18 +76,21 @@ public class SubmitBookForPublishingActivity {
         }
         // TODO: Submit the BookPublishRequest for processing
 
-        bookPublishRequestManager.addBookPublishRequest(BookPublishRequest.builder()
+        bookPublishRequestManager.addBookPublishRequest( BookPublishRequest.builder()
                         .withPublishingRecordId(bookPublishRequest.getPublishingRecordId())
                         .withAuthor(book.getAuthor())
                         .withGenre(BookGenre.valueOf(book.getGenre()))
                         .withText(book.getText())
                         .withTitle(book.getTitle())
-                        .withBookId(book.getBookId())
-                .build());
+                        .withBookId(request.getBookId())
+                .build()
+        );
 
-        PublishingStatusItem item = publishingStatusDao.setPublishingStatus(bookPublishRequest.getPublishingRecordId(),
+        PublishingStatusItem item = publishingStatusDao.setPublishingStatus(
+                bookPublishRequest.getPublishingRecordId(),
                 PublishingRecordStatus.QUEUED,
-                bookPublishRequest.getBookId());
+                request.getBookId()
+        );
 
         return SubmitBookForPublishingResponse.builder()
                 .withPublishingRecordId(item.getPublishingRecordId())
