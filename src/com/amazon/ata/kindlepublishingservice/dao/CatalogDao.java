@@ -78,5 +78,52 @@ public class CatalogDao {
         return book;
     }
 
+    /**
+     * This method checks if a book is in the database even if inactive.
+     * @param bookId id of book
+     * @return CatalogItemVersion of the book in the database
+     */
+    public CatalogItemVersion getBook(String bookId) {
+        CatalogItemVersion book = getLatestVersionOfBook(bookId);
+        if (book == null ) {
+            throw new BookNotFoundException(String.format("No book found for id: %s", bookId));
+        }
+
+        return book;
+    }
+
+    public CatalogItemVersion createdOrUpdateBook(KindleFormattedBook formattedBook) {
+        CatalogItemVersion book;
+        String bookId = formattedBook.getBookId() == null ? KindlePublishingUtils.generateBookId() : formattedBook.getBookId();
+
+        try {
+            book = getBook(bookId);
+
+            // updating book
+            deleteBookSoft(book.getBookId());
+
+            CatalogItemVersion newBook = save(formattedBook, bookId,false, book.getVersion() + 1);
+            return newBook;
+        } catch (BookNotFoundException e) {
+            // adding new book
+
+            CatalogItemVersion newBook = save(formattedBook, bookId,false, 1);
+            return newBook;
+        }
+
+    }
+
+    public CatalogItemVersion save(KindleFormattedBook book, String bookId, Boolean isInactive, int version) {
+        CatalogItemVersion newBook = new CatalogItemVersion();
+        newBook.setTitle(book.getTitle());
+        newBook.setAuthor(book.getAuthor());
+        newBook.setText(book.getText());
+        newBook.setInactive(isInactive);
+        newBook.setVersion(version);
+        newBook.setGenre(book.getGenre());
+        newBook.setBookId(bookId);
+        dynamoDbMapper.save(newBook);
+        return newBook;
+    }
 
 }
